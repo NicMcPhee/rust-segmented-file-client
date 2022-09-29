@@ -1,12 +1,13 @@
 use std::{str::{self, Utf8Error}, ops::Not};
 
 #[derive(Debug, PartialEq)]
-enum PacketParseError {
+pub enum PacketParseError {
     IncompletePacket,
     FilenameParseError
 }
 
-enum Packet {
+#[derive(Debug)]
+pub enum Packet {
     Header(Header),
     Data(Data)
 }
@@ -35,7 +36,7 @@ impl TryFrom<&[u8]> for Packet {
 }
 
 #[derive(Debug, PartialEq)]
-struct Header {
+pub struct Header {
     file_id: u8,
     file_name: String
 }
@@ -72,7 +73,7 @@ impl TryFrom<&[u8]> for Header {
 }
 
 #[derive(Debug, PartialEq)]
-struct Data {
+pub struct Data {
     file_id: u8,
     packet_number: u16,
     is_last_packet: bool,
