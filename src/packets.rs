@@ -1,4 +1,4 @@
-use std::str::{self, Utf8Error};
+use std::{str::{self, Utf8Error}, ops::Not};
 
 #[derive(Debug, PartialEq)]
 enum PacketParseError {
@@ -12,6 +12,8 @@ enum Packet {
 }
 
 impl Packet {
+    // An alternative from Wgaffa@Twitch that is more Haskell-like:
+    //  bytes.is_empty().not().then(|| bytes[0] % 2 == 0).ok_or(PacketParseError::IncompletePacket)
     fn is_header(bytes: &[u8]) -> Result<bool, PacketParseError> {
         if bytes.is_empty() {
             return Err(PacketParseError::IncompletePacket)
@@ -73,6 +75,7 @@ impl TryFrom<&[u8]> for Header {
 struct Data {
     file_id: u8,
     packet_number: u16,
+    is_last_packet: bool,
     data: Vec<u8>
 }
 
@@ -87,7 +90,17 @@ impl TryFrom<&[u8]> for Data {
     ///   * There are at least 5 bytes (the minimal size for a data packet)
     ///   * This is actually a data packet (i.e., the first byte is odd)
     fn try_from(bytes: &[u8]) -> Result<Self, PacketParseError> {
-        todo!()
+        if bytes.len() < 5 {
+            return Err(PacketParseError::IncompletePacket)
+        }
+        assert!(Packet::is_header(bytes)?.not(), "expected a data packet but first byte was not odd");
+        let file_id = bytes[1];
+        let packet_number_bytes: [u8; 2] = [bytes[2], bytes[3]];
+        let packet_number = u16::from_be_bytes(packet_number_bytes);
+        let is_last_packet = bytes[0] % 4 == 3;
+        let data = bytes[4..].to_vec();
+
+        Ok(Data { file_id, packet_number, is_last_packet, data })
     }
 }
 
@@ -174,5 +187,59 @@ mod parse_header_tests {
         let sparkle_heart: Vec<u8> = vec![0, 0, 0, 159, 146, 150];
         let result = Header::try_from(sparkle_heart.as_slice());
         assert_eq!(result, Err(PacketParseError::FilenameParseError));
+    }
+}
+
+#[cfg(test)]
+mod parse_data_tests {
+    use super::{Data, PacketParseError};
+
+    #[test]
+    fn error_on_empty_array() {
+        let bytes: Vec<u8> = vec![];
+        let result = Data::try_from(bytes.as_slice());
+        assert_eq!(result, Err(PacketParseError::IncompletePacket));
+    }
+
+    #[test]
+    fn error_on_short_array() {
+        let bytes: Vec<u8> = vec![0, 1, 2, 3];
+        let result = Data::try_from(bytes.as_slice());
+        assert_eq!(result, Err(PacketParseError::IncompletePacket));
+    }
+
+    #[test]
+    #[should_panic(expected = "expected a data packet but first byte was not odd")]
+    fn non_data_panics() {
+        let bytes: Vec<u8> = vec![0, 5, 8, 9, 6, 3, 2, 0];
+        let _ = Data::try_from(bytes.as_slice());
+    }
+
+    #[test]
+    fn not_last_data_packet() {
+        let bytes: Vec<u8> = vec![1, 5, 8, 9, 6, 3, 2, 0];
+        let result = Data::try_from(bytes.as_slice()).unwrap();
+        assert!(!result.is_last_packet);
+    }
+
+    #[test]
+    fn is_last_data_packet() {
+        let bytes: Vec<u8> = vec![3, 5, 8, 9, 6, 3, 2, 0];
+        let result = Data::try_from(bytes.as_slice()).unwrap();
+        assert!(result.is_last_packet);
+    }
+
+    #[test]
+    fn parse_packet_number() {
+        let bytes: Vec<u8> = vec![3, 5, 8, 9, 3, 2, 0];
+        let result = Data::try_from(bytes.as_slice()).unwrap();
+        assert_eq!(result.packet_number, 8*256+9);
+    }
+
+    #[test]
+    fn extract_data() {
+        let bytes: Vec<u8> = vec![3, 5, 8, 9, 3, 2, 0];
+        let result = Data::try_from(bytes.as_slice()).unwrap();
+        assert_eq!(result.data, vec![3, 2, 0]);
     }
 }
