@@ -11,9 +11,6 @@ enum Packet {
     Data(Data)
 }
 
-// TODO: Add a `try_from` that converts `&[u8]` to `Self/Packet`. It
-//   will check whether the bytes are for a header packet or now, and
-//   then call the appropriate specific `try_from` conversion. 
 impl Packet {
     fn is_header(bytes: &[u8]) -> Result<bool, PacketParseError> {
         if bytes.is_empty() {
@@ -141,14 +138,14 @@ mod parse_header_tests {
     #[test]
     fn error_on_empty_array() {
         let bytes: Vec<u8> = vec![];
-        let result = Header::try_from(&*bytes);
+        let result = Header::try_from(bytes.as_slice());
         assert_eq!(result, Err(PacketParseError::IncompletePacket));
     }
 
     #[test]
     fn error_on_short_array() {
         let bytes: Vec<u8> = vec![0, 1];
-        let result = Header::try_from(&*bytes);
+        let result = Header::try_from(bytes.as_slice());
         assert_eq!(result, Err(PacketParseError::IncompletePacket));
     }
 
@@ -156,6 +153,26 @@ mod parse_header_tests {
     #[should_panic(expected = "expected a header packet but first byte was not even")]
     fn non_header_panics() {
         let bytes: Vec<u8> = vec![1, 5, 8, 9, 6, 3, 2, 0];
-        let _ = Header::try_from(&*bytes);
+        let _ = Header::try_from(bytes.as_slice());
+    }
+
+    #[test]
+    fn emoji_in_file_name() {
+        // The last four bytes in the following are legal bytes
+        // for a sparkle heart emoji
+        let sparkle_heart = vec![0, 0, 240, 159, 146, 150];
+        let result = Header::try_from(sparkle_heart.as_slice());
+        assert_eq!(result, Ok(Header{ file_id: 0, file_name: "💖".to_string() }));
+    }
+
+    #[test]
+    fn illegal_file_name() {
+        // The following is legal bytes for a sparkle heart emoji
+        // let sparkle_heart = vec![240, 159, 146, 150];
+        // These last four bytes are not legal utf8 because we replaced
+        // the first byte in the emoji sequence with a 0.
+        let sparkle_heart: Vec<u8> = vec![0, 0, 0, 159, 146, 150];
+        let result = Header::try_from(sparkle_heart.as_slice());
+        assert_eq!(result, Err(PacketParseError::FilenameParseError));
     }
 }
