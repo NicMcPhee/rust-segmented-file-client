@@ -28,9 +28,9 @@ impl TryFrom<&[u8]> for Packet {
 
     fn try_from(bytes: &[u8]) -> Result<Self, PacketParseError> {
         if Packet::is_header(bytes)? {
-            Ok(Packet::Header(Header::try_from(bytes)?))
+            Ok(Packet::Header(bytes.try_into()?))
         } else {
-            Ok(Packet::Data(Data::try_from(bytes)?))
+            Ok(Packet::Data(bytes.try_into()?))
         }
     }
 }
