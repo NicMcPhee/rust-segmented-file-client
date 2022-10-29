@@ -21,6 +21,13 @@ impl Packet {
         }
         Ok(bytes[0] % 2 == 0)
     }
+
+    pub fn file_id(&self) -> u8 {
+        match self {
+            Packet::Header(header) => header.file_id,
+            Packet::Data(data) => data.file_id
+        }
+    }
 }
 
 impl TryFrom<&[u8]> for Packet {
