@@ -45,7 +45,7 @@ impl TryFrom<&[u8]> for Packet {
 #[derive(Debug, PartialEq, Eq)]
 pub struct Header {
     file_id: u8,
-    file_name: String
+    pub(crate) file_name: String
 }
 
 impl From<Utf8Error> for PacketParseError {
@@ -82,9 +82,9 @@ impl TryFrom<&[u8]> for Header {
 #[derive(Debug, PartialEq, Eq)]
 pub struct Data {
     file_id: u8,
-    packet_number: u16,
-    is_last_packet: bool,
-    data: Vec<u8>
+    pub(crate) packet_number: u16,
+    pub(crate) is_last_packet: bool,
+    pub(crate) data: Vec<u8>
 }
 
 impl TryFrom<&[u8]> for Data {
