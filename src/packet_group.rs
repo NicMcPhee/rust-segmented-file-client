@@ -4,9 +4,9 @@ use crate::packets::{Packet, Data, Header};
 
 #[derive(Default)]
 pub struct PacketGroup {
-    file_name: Option<String>,
-    expected_number_of_packets: Option<usize>,
-    packets: HashMap<u16, Vec<u8>>
+    pub(crate) file_name: Option<String>,
+    pub(crate) expected_number_of_packets: Option<usize>,
+    pub(crate) packets: HashMap<u16, Vec<u8>>
 }
 
 impl PacketGroup {
