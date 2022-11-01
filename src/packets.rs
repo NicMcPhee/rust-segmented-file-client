@@ -42,7 +42,7 @@ impl TryFrom<&[u8]> for Packet {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Header {
     pub(crate) file_id: u8,
     pub(crate) file_name: String
@@ -79,7 +79,7 @@ impl TryFrom<&[u8]> for Header {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Data {
     pub(crate) file_id: u8,
     pub(crate) packet_number: u16,

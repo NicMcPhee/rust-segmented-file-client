@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::packets::{Packet, Data, Header};
 
-#[derive(Default)]
+#[derive(Default, Debug, PartialEq)]
 pub struct PacketGroup {
     pub(crate) file_name: Option<String>,
     pub(crate) expected_number_of_packets: Option<usize>,
@@ -31,7 +31,7 @@ impl PacketGroup {
     fn process_data_packet(&mut self, data: Data) {
         self.packets.insert(data.packet_number, data.data);
         if data.is_last_packet {
-            self.expected_number_of_packets = Some((data.packet_number+1) as usize)
+            self.expected_number_of_packets = Some((data.packet_number as usize) + 1)
         }
     }
 }
