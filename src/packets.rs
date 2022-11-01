@@ -251,3 +251,25 @@ mod parse_data_tests {
         assert_eq!(result.data, vec![3, 2, 0]);
     }
 }
+
+use quickcheck::{Arbitrary, Gen};
+
+impl Arbitrary for Header {
+    fn arbitrary(g: &mut Gen) -> Self {
+        Self {
+            file_id: u8::arbitrary(g),
+            file_name: String::arbitrary(g),
+        }
+    }
+}
+
+impl Arbitrary for Data {
+    fn arbitrary(g: &mut Gen) -> Self {
+        Self {
+            file_id: u8::arbitrary(g),
+            packet_number: u16::arbitrary(g),
+            is_last_packet: bool::arbitrary(g),
+            data: Vec::arbitrary(g),
+        }
+    }
+}
