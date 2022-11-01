@@ -7,3 +7,8 @@ edition = "2021"
 
 [dependencies]
 tokio = { version = "1.21.2", features = ["net", "rt-multi-thread", "macros"] }
+quickcheck = "1"
+
+[dev-dependencies]
+quickcheck_macros = "1"
+rand = "0.8.5"
