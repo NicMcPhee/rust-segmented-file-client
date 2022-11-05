@@ -60,7 +60,8 @@ impl PacketGroup {
         for packet_number in 0..self.expected_number_of_packets.unwrap() {
             let packet_number: u16 = u16::try_from(packet_number).expect("The packet number should fit in a u16");
             let packet = self.packets.get(&packet_number).expect("Didn't find an expected packet");
-            file.write_all(packet)?;
+            file.write_all(packet)
+                .context(format!("Failed to write data to file {file_name:?}: {:?}", packet))?;
         }
         Ok(())
     }
