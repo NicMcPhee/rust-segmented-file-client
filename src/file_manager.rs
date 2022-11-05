@@ -28,7 +28,10 @@ impl FileManager {
     }
 
     pub async fn write_all_files(&self) -> io::Result<()> {
-        todo!()
+        for packet_group in self.map.values() {
+            packet_group.write_file()?;
+        }
+        Ok(())
     }
 }
 
