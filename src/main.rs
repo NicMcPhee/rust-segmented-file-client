@@ -1,3 +1,5 @@
+use std::io::{self, Write};
+
 use tokio::net::UdpSocket;
 
 use rust_segmented_file_client::{
@@ -40,11 +42,10 @@ async fn main() -> Result<(), ClientError> {
     while !file_manager.received_all_packets() {
         let len = sock.recv(&mut buf).await?;
         let packet: Packet = buf[..len].try_into()?;
-        println!("Got packet of len {len} for file {}.", packet.file_id());
+        print!(".");
+        io::stdout().flush()?;
         file_manager.process_packet(packet);
     }
-
-    println!("Done with the loop!");
 
     file_manager.write_all_files().await?;
 
