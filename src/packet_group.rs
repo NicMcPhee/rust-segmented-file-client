@@ -10,6 +10,7 @@ pub struct PacketGroup {
 }
 
 impl PacketGroup {
+    #[must_use]
     pub fn received_all_packets(&self) -> bool {
         self.expected_number_of_packets == Some(self.packets.len())
         // self.expected_number_of_packets.map(|expected_number| {
@@ -31,10 +32,24 @@ impl PacketGroup {
     fn process_data_packet(&mut self, data: Data) {
         self.packets.insert(data.packet_number, data.data);
         if data.is_last_packet {
-            self.expected_number_of_packets = Some((data.packet_number as usize) + 1)
+            self.expected_number_of_packets = Some((data.packet_number as usize) + 1);
         }
     }
 
+    /// # Panics
+    ///
+    /// Will panic if any of the following is true:
+    ///   * The file name hasn't been set
+    ///   * The expected number of packets hasn't set
+    ///   * A packet number was too big to fit in a u16, i.e., the expected
+    ///     number of packets was too large
+    ///   * There's a missing packet in the `packets` map
+    /// 
+    /// # Errors
+    /// 
+    /// Will return an error if either:
+    ///   * We couldn't open the file
+    ///   * There was an error writing to the file
     pub fn write_file(&self) -> io::Result<()> {
         let mut file = File::create(self.file_name.as_ref().unwrap())?;
         for packet_number in 0..self.expected_number_of_packets.unwrap() {

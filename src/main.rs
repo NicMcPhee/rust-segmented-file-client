@@ -47,7 +47,7 @@ async fn main() -> Result<(), ClientError> {
         file_manager.process_packet(packet);
     }
 
-    file_manager.write_all_files().await?;
+    file_manager.write_all_files()?;
 
     Ok(())
 }

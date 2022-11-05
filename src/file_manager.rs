@@ -10,12 +10,13 @@ pub struct FileManager {
 }
 
 impl FileManager {
+    #[must_use]
     pub fn received_all_packets(&self) -> bool {
         // We have to check that we've seen all three files,
         // and that each file is "done", i.e., we've received all
         // of the packets for that file.
         self.map.len() == 3 
-            && self.map.values().all(|pg| pg.received_all_packets())
+            && self.map.values().all(PacketGroup::received_all_packets)
     }
 
     fn packet_group_for_file_id(&mut self, file_id: u8) -> &mut PacketGroup {
@@ -27,7 +28,11 @@ impl FileManager {
             .process_packet(packet);
     }
 
-    pub async fn write_all_files(&self) -> io::Result<()> {
+    /// # Errors
+    ///
+    /// Will return `Err` if there is a problem writing any of the
+    /// downloaded files.
+    pub fn write_all_files(&self) -> io::Result<()> {
         for packet_group in self.map.values() {
             packet_group.write_file()?;
         }

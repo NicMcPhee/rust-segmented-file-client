@@ -15,17 +15,18 @@ pub enum Packet {
 impl Packet {
     // An alternative from Wgaffa@Twitch that is more Haskell-like:
     //  bytes.is_empty().not().then(|| bytes[0] % 2 == 0).ok_or(PacketParseError::IncompletePacket)
-    fn is_header(bytes: &[u8]) -> Result<bool, PacketParseError> {
+    const fn is_header(bytes: &[u8]) -> Result<bool, PacketParseError> {
         if bytes.is_empty() {
             return Err(PacketParseError::IncompletePacket)
         }
         Ok(bytes[0] % 2 == 0)
     }
 
-    pub fn file_id(&self) -> u8 {
+    #[must_use]
+    pub const fn file_id(&self) -> u8 {
         match self {
-            Packet::Header(header) => header.file_id,
-            Packet::Data(data) => data.file_id
+            Self::Header(header) => header.file_id,
+            Self::Data(data) => data.file_id
         }
     }
 }
@@ -34,10 +35,10 @@ impl TryFrom<&[u8]> for Packet {
     type Error = PacketParseError;
 
     fn try_from(bytes: &[u8]) -> Result<Self, PacketParseError> {
-        if Packet::is_header(bytes)? {
-            Ok(Packet::Header(bytes.try_into()?))
+        if Self::is_header(bytes)? {
+            Ok(Self::Header(bytes.try_into()?))
         } else {
-            Ok(Packet::Data(bytes.try_into()?))
+            Ok(Self::Data(bytes.try_into()?))
         }
     }
 }
@@ -49,8 +50,8 @@ pub struct Header {
 }
 
 impl From<Utf8Error> for PacketParseError {
-    fn from(_: Utf8Error) -> PacketParseError {
-        PacketParseError::FilenameParseError
+    fn from(_: Utf8Error) -> Self {
+        Self::FilenameParseError
     }
 }
 
@@ -75,7 +76,7 @@ impl TryFrom<&[u8]> for Header {
         let file_id = bytes[1];
         let file_name = str::from_utf8(&bytes[2..])?.to_string();
 
-        Ok(Header { file_id, file_name })
+        Ok(Self { file_id, file_name })
     }
 }
 
@@ -108,7 +109,7 @@ impl TryFrom<&[u8]> for Data {
         let is_last_packet = bytes[0] % 4 == 3;
         let data = bytes[4..].to_vec();
 
-        Ok(Data { file_id, packet_number, is_last_packet, data })
+        Ok(Self { file_id, packet_number, is_last_packet, data })
     }
 }
 
