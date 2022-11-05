@@ -53,7 +53,10 @@ impl PacketGroup {
     ///   * We couldn't open the file
     ///   * There was an error writing to the file
     pub fn write_file(&self) -> Result<()> {
-        let mut file = File::create(self.file_name.as_ref().unwrap())?;
+        let file_name = self.file_name.as_ref().unwrap();
+        let mut file 
+            = File::create(file_name)
+                .context(format!("Couldn't open file {}", file_name))?;
         for packet_number in 0..self.expected_number_of_packets.unwrap() {
             let packet_number: u16 = u16::try_from(packet_number).expect("The packet number should fit in a u16");
             let packet = self.packets.get(&packet_number).expect("Didn't find an expected packet");
