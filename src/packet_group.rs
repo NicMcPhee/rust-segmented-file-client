@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs::File, io::{self, Write}};
 
 use crate::packets::{Packet, Data, Header};
 
@@ -33,5 +33,15 @@ impl PacketGroup {
         if data.is_last_packet {
             self.expected_number_of_packets = Some((data.packet_number as usize) + 1)
         }
+    }
+
+    pub fn write_file(&self) -> io::Result<()> {
+        let mut file = File::create(self.file_name.as_ref().unwrap())?;
+        for packet_number in 0..self.expected_number_of_packets.unwrap() {
+            let packet_number: u16 = u16::try_from(packet_number).expect("The packet number should fit in a u16");
+            let packet = self.packets.get(&packet_number).expect("Didn't find an expected packet");
+            file.write_all(packet)?;
+        }
+        Ok(())
     }
 }
