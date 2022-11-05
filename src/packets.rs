@@ -42,7 +42,7 @@ impl TryFrom<&[u8]> for Packet {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Header {
     pub(crate) file_id: u8,
     pub(crate) file_name: String
@@ -79,7 +79,7 @@ impl TryFrom<&[u8]> for Header {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Data {
     pub(crate) file_id: u8,
     pub(crate) packet_number: u16,
@@ -249,5 +249,27 @@ mod parse_data_tests {
         let bytes: Vec<u8> = vec![3, 5, 8, 9, 3, 2, 0];
         let result = Data::try_from(bytes.as_slice()).unwrap();
         assert_eq!(result.data, vec![3, 2, 0]);
+    }
+}
+
+use quickcheck::{Arbitrary, Gen};
+
+impl Arbitrary for Header {
+    fn arbitrary(g: &mut Gen) -> Self {
+        Self {
+            file_id: u8::arbitrary(g),
+            file_name: String::arbitrary(g),
+        }
+    }
+}
+
+impl Arbitrary for Data {
+    fn arbitrary(g: &mut Gen) -> Self {
+        Self {
+            file_id: u8::arbitrary(g),
+            packet_number: u16::arbitrary(g),
+            is_last_packet: bool::arbitrary(g),
+            data: Vec::arbitrary(g),
+        }
     }
 }
