@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::packets::{Packet, Data, Header};
 
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, Debug, PartialEq, Eq)]
 pub struct PacketGroup {
     pub(crate) file_name: Option<String>,
     pub(crate) expected_number_of_packets: Option<usize>,
