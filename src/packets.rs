@@ -1,8 +1,12 @@
 use std::{str::{self, Utf8Error}, ops::Not};
 
-#[derive(Debug, PartialEq, Eq)]
+use thiserror::Error;
+
+#[derive(Debug, Error, PartialEq, Eq)]
 pub enum PacketParseError {
+    #[error("Packet didn't have enough bytes")]
     IncompletePacket,
+    #[error("Packet didn't contain data that could be parsed to a String")]
     FilenameParseError
 }
 
