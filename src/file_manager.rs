@@ -1,4 +1,6 @@
-use std::{io, collections::HashMap};
+use std::collections::HashMap;
+
+use anyhow::Result;
 
 use crate::{packets::Packet, packet_group::PacketGroup};
 
@@ -32,7 +34,7 @@ impl FileManager {
     ///
     /// Will return `Err` if there is a problem writing any of the
     /// downloaded files.
-    pub fn write_all_files(&self) -> io::Result<()> {
+    pub fn write_all_files(&self) -> Result<()> {
         for packet_group in self.map.values() {
             packet_group.write_file()?;
         }

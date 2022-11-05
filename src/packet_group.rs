@@ -1,4 +1,6 @@
-use std::{collections::HashMap, fs::File, io::{self, Write}};
+use std::{collections::HashMap, fs::File, io::Write};
+
+use anyhow::{Result, Context};
 
 use crate::packets::{Packet, Data, Header};
 
@@ -50,7 +52,7 @@ impl PacketGroup {
     /// Will return an error if either:
     ///   * We couldn't open the file
     ///   * There was an error writing to the file
-    pub fn write_file(&self) -> io::Result<()> {
+    pub fn write_file(&self) -> Result<()> {
         let mut file = File::create(self.file_name.as_ref().unwrap())?;
         for packet_number in 0..self.expected_number_of_packets.unwrap() {
             let packet_number: u16 = u16::try_from(packet_number).expect("The packet number should fit in a u16");

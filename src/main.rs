@@ -2,6 +2,8 @@ use std::io::{self, Write};
 
 use tokio::net::UdpSocket;
 
+use anyhow::Result;
+
 use rust_segmented_file_client::{
     packets::{Packet, PacketParseError}, 
     file_manager::FileManager
@@ -28,7 +30,7 @@ impl From<PacketParseError> for ClientError {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), ClientError> {
+async fn main() -> Result<()> {
     let sock = UdpSocket::bind("0.0.0.0:7077").await?;
 
     let remote_addr = "127.0.0.1:6014";
