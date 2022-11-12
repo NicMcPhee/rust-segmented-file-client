@@ -1,4 +1,6 @@
-use std::{io, collections::HashMap};
+use std::collections::HashMap;
+
+use anyhow::Context;
 
 use crate::{packets::Packet, packet_group::PacketGroup};
 
@@ -32,9 +34,15 @@ impl FileManager {
     ///
     /// Will return `Err` if there is a problem writing any of the
     /// downloaded files.
-    pub fn write_all_files(&self) -> io::Result<()> {
-        for packet_group in self.map.values() {
-            packet_group.write_file()?;
+    pub fn write_all_files(&self) -> anyhow::Result<()> {
+        for (file_id, packet_group) in &self.map {
+            packet_group.write_file()
+                .with_context(|| {
+                    match &packet_group.file_name {
+                        Some(file_name) => format!("Failed to write file for packet group with file id {} and file name \"{}\"", file_id, file_name),
+                        None => format!("Tried to write packet group with file id {}", file_id)
+                    }
+                })?;
         }
         Ok(())
     }
