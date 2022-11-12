@@ -1,8 +1,10 @@
 use std::{str::{self, Utf8Error}, ops::Not};
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Error, Debug, PartialEq, Eq)]
 pub enum PacketParseError {
+    #[error("Incomplete packet")]
     IncompletePacket,
+    #[error("Couldn't parse data to filename")]
     FilenameParseError
 }
 
@@ -254,6 +256,7 @@ mod parse_data_tests {
 }
 
 use quickcheck::{Arbitrary, Gen};
+use thiserror::Error;
 
 impl Arbitrary for Header {
     fn arbitrary(g: &mut Gen) -> Self {
