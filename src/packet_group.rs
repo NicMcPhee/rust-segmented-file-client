@@ -1,6 +1,8 @@
-use std::{collections::HashMap, fs::File, io::{self, Write}};
+use std::{collections::HashMap, fs::File, io::Write};
 
 use crate::packets::{Packet, Data, Header};
+
+use anyhow::{anyhow, Context};
 
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct PacketGroup {
@@ -50,12 +52,24 @@ impl PacketGroup {
     /// Will return an error if either:
     ///   * We couldn't open the file
     ///   * There was an error writing to the file
-    pub fn write_file(&self) -> io::Result<()> {
-        let mut file = File::create(self.file_name.as_ref().unwrap())?;
-        for packet_number in 0..self.expected_number_of_packets.unwrap() {
-            let packet_number: u16 = u16::try_from(packet_number).expect("The packet number should fit in a u16");
-            let packet = self.packets.get(&packet_number).expect("Didn't find an expected packet");
-            file.write_all(packet)?;
+    pub fn write_file(&self) -> anyhow::Result<()> {
+        let file_name = self.file_name
+            .as_ref()
+            .ok_or_else(|| anyhow!("Missing file name in packet group"))?;
+        let mut file = File::create(file_name)
+            .with_context(|| format!("Failed to create file \"{}\"", file_name))?;
+        let number_of_packets = self.expected_number_of_packets
+            .ok_or_else(|| anyhow!("Didn't know the number of packets for packet group \"{}\"; was the last packet received?", file_name))?;
+        assert!(number_of_packets <= u16::MAX as usize + 1, "The number of packets is 1 more than the largest u16 packet number and should be <= u16::MAX");
+        // The .expect() shouldn't ever happen here because of the previous assertion.
+        #[allow(clippy::expect_used)]
+        let max_packet_number: u16 = u16::try_from(number_of_packets - 1).expect("The maximum packet number should fit in a u16");
+        for packet_number in 0..=max_packet_number {
+            let packet = self.packets
+                .get(&packet_number)
+                .with_context(|| format!("Didn't find an expected packet with number {} for file \"{}\"", packet_number, file_name))?;
+            file.write_all(packet)
+                .with_context(|| format!("Failed to write buffer to file \"{}\"", file_name))?;
         }
         Ok(())
     }
