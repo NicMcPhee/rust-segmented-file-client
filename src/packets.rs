@@ -1,15 +1,18 @@
-use std::{str::{self, Utf8Error}, ops::Not};
+use std::{
+    ops::Not,
+    str::{self, Utf8Error},
+};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum PacketParseError {
     IncompletePacket,
-    FilenameParseError
+    FilenameParseError,
 }
 
 #[derive(Debug)]
 pub enum Packet {
     Header(Header),
-    Data(Data)
+    Data(Data),
 }
 
 impl Packet {
@@ -17,7 +20,7 @@ impl Packet {
     //  bytes.is_empty().not().then(|| bytes[0] % 2 == 0).ok_or(PacketParseError::IncompletePacket)
     const fn is_header(bytes: &[u8]) -> Result<bool, PacketParseError> {
         if bytes.is_empty() {
-            return Err(PacketParseError::IncompletePacket)
+            return Err(PacketParseError::IncompletePacket);
         }
         Ok(bytes[0] % 2 == 0)
     }
@@ -26,7 +29,7 @@ impl Packet {
     pub const fn file_id(&self) -> u8 {
         match self {
             Self::Header(header) => header.file_id,
-            Self::Data(data) => data.file_id
+            Self::Data(data) => data.file_id,
         }
     }
 }
@@ -46,7 +49,7 @@ impl TryFrom<&[u8]> for Packet {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Header {
     pub(crate) file_id: u8,
-    pub(crate) file_name: String
+    pub(crate) file_name: String,
 }
 
 impl From<Utf8Error> for PacketParseError {
@@ -67,12 +70,15 @@ impl TryFrom<&[u8]> for Header {
     ///     end)
     ///   * There are at least 3 bytes (the minimal size for a header packet)
     ///   * This is actually a header packet (i.e., the first byte is even)
-    ///   * Bytes 2.. can be parsed as a String  
+    ///   * Bytes 2.. can be parsed as a String
     fn try_from(bytes: &[u8]) -> Result<Self, PacketParseError> {
         if bytes.len() < 3 {
-            return Err(PacketParseError::IncompletePacket)
+            return Err(PacketParseError::IncompletePacket);
         }
-        assert!(Packet::is_header(bytes)?, "expected a header packet but first byte was not even");
+        assert!(
+            Packet::is_header(bytes)?,
+            "expected a header packet but first byte was not even"
+        );
         let file_id = bytes[1];
         let file_name = str::from_utf8(&bytes[2..])?.to_string();
 
@@ -85,7 +91,7 @@ pub struct Data {
     pub(crate) file_id: u8,
     pub(crate) packet_number: u16,
     pub(crate) is_last_packet: bool,
-    pub(crate) data: Vec<u8>
+    pub(crate) data: Vec<u8>,
 }
 
 impl TryFrom<&[u8]> for Data {
@@ -100,23 +106,31 @@ impl TryFrom<&[u8]> for Data {
     ///   * This is actually a data packet (i.e., the first byte is odd)
     fn try_from(bytes: &[u8]) -> Result<Self, PacketParseError> {
         if bytes.len() < 5 {
-            return Err(PacketParseError::IncompletePacket)
+            return Err(PacketParseError::IncompletePacket);
         }
-        assert!(Packet::is_header(bytes)?.not(), "expected a data packet but first byte was not odd");
+        assert!(
+            Packet::is_header(bytes)?.not(),
+            "expected a data packet but first byte was not odd"
+        );
         let file_id = bytes[1];
         let packet_number_bytes: [u8; 2] = [bytes[2], bytes[3]];
         let packet_number = u16::from_be_bytes(packet_number_bytes);
         let is_last_packet = bytes[0] % 4 == 3;
         let data = bytes[4..].to_vec();
 
-        Ok(Self { file_id, packet_number, is_last_packet, data })
+        Ok(Self {
+            file_id,
+            packet_number,
+            is_last_packet,
+            data,
+        })
     }
 }
 
 #[cfg(test)]
 mod is_header_tests {
     use crate::packets::{Packet, PacketParseError};
-    
+
     #[test]
     fn is_header_with_0() {
         let bytes: Vec<u8> = vec![0, 5, 8, 9, 6, 3, 2, 0];
@@ -184,7 +198,13 @@ mod parse_header_tests {
         // for a sparkle heart emoji
         let sparkle_heart = vec![0, 0, 240, 159, 146, 150];
         let result = Header::try_from(sparkle_heart.as_slice());
-        assert_eq!(result, Ok(Header{ file_id: 0, file_name: "💖".to_string() }));
+        assert_eq!(
+            result,
+            Ok(Header {
+                file_id: 0,
+                file_name: "💖".to_string()
+            })
+        );
     }
 
     #[test]
@@ -199,6 +219,7 @@ mod parse_header_tests {
     }
 }
 
+#[expect(clippy::unwrap_used, reason = "Unwrap is OK in tests")]
 #[cfg(test)]
 mod parse_data_tests {
     use super::{Data, PacketParseError};
@@ -242,7 +263,7 @@ mod parse_data_tests {
     fn parse_packet_number() {
         let bytes: Vec<u8> = vec![3, 5, 8, 9, 3, 2, 0];
         let result = Data::try_from(bytes.as_slice()).unwrap();
-        assert_eq!(result.packet_number, 8*256+9);
+        assert_eq!(result.packet_number, 8 * 256 + 9);
     }
 
     #[test]

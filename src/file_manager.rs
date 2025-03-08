@@ -1,12 +1,12 @@
-use std::{io, collections::HashMap};
+use std::{collections::HashMap, io};
 
-use crate::{packets::Packet, packet_group::PacketGroup};
+use crate::{packet_group::PacketGroup, packets::Packet};
 
 #[derive(Default)]
 pub struct FileManager {
     // The key will be a file ID, and the value will
     // be the associated PacketGroup.
-    map: HashMap<u8, PacketGroup>
+    map: HashMap<u8, PacketGroup>,
 }
 
 impl FileManager {
@@ -15,8 +15,7 @@ impl FileManager {
         // We have to check that we've seen all three files,
         // and that each file is "done", i.e., we've received all
         // of the packets for that file.
-        self.map.len() == 3 
-            && self.map.values().all(PacketGroup::received_all_packets)
+        self.map.len() == 3 && self.map.values().all(PacketGroup::received_all_packets)
     }
 
     fn packet_group_for_file_id(&mut self, file_id: u8) -> &mut PacketGroup {
@@ -42,7 +41,10 @@ impl FileManager {
 
 #[cfg(test)]
 mod process_packet_tests {
-    use crate::{packets::{Header, Packet, Data}, file_manager::FileManager};
+    use crate::{
+        file_manager::FileManager,
+        packets::{Data, Header, Packet},
+    };
 
     #[test]
     fn just_header_packet() {
@@ -111,7 +113,10 @@ mod process_packet_tests {
         let file_number = map.keys().nth(0).unwrap();
         let packet_group = map.get(file_number).unwrap();
         assert_eq!(None, packet_group.file_name);
-        assert_eq!(Some(1 + packet_number as usize), packet_group.expected_number_of_packets);
+        assert_eq!(
+            Some(1 + packet_number as usize),
+            packet_group.expected_number_of_packets
+        );
         assert_eq!(1, packet_group.packets.len());
         assert_eq!(bytes, packet_group.packets[&packet_number]);
     }
@@ -121,7 +126,7 @@ mod process_packet_tests {
 mod quickcheck_tests {
     use std::ops::Deref;
 
-    use crate::packets::{Header, Data};
+    use crate::packets::{Data, Header};
 
     use super::*;
 
@@ -144,7 +149,10 @@ mod quickcheck_tests {
         let mut file_manager = FileManager::default();
         assert_eq!(None, file_manager.map.get(&packet.file_id));
         file_manager.process_packet(Packet::Header(packet.clone()));
-        assert_eq!(0, file_manager.map.get(&packet.file_id).unwrap().packets.len());
+        assert_eq!(
+            0,
+            file_manager.map.get(&packet.file_id).unwrap().packets.len()
+        );
         file_manager.map.get(&packet.file_id).unwrap().file_name == Some(packet.file_name.clone())
     }
 
@@ -157,7 +165,10 @@ mod quickcheck_tests {
         let group = file_manager.map.get(&packet.file_id).unwrap();
         assert_eq!(None, group.file_name);
         if packet.is_last_packet {
-            assert_eq!(Some((packet.packet_number as usize)+1), group.expected_number_of_packets);
+            assert_eq!(
+                Some((packet.packet_number as usize) + 1),
+                group.expected_number_of_packets
+            );
         } else {
             assert_eq!(None, group.expected_number_of_packets);
         }
@@ -171,7 +182,7 @@ mod all_packets_tests {
     use rand::seq::SliceRandom;
     use rand::thread_rng;
 
-    use crate::packets::{Header, Data, Packet};
+    use crate::packets::{Data, Header, Packet};
 
     use super::FileManager;
 
@@ -181,11 +192,18 @@ mod all_packets_tests {
         let file_name = "test_file_name".to_string();
         let file_id = 42;
         let num_packets: u16 = 3;
-        packets.push(Packet::Header(Header { file_name: file_name.clone(), file_id }));
+        packets.push(Packet::Header(Header {
+            file_name: file_name.clone(),
+            file_id,
+        }));
         for packet_number in 0..num_packets {
             let val: u8 = (packet_number % 100).try_into().unwrap();
-            packets.push(Packet::Data(Data { file_id, packet_number, is_last_packet: packet_number == 2, 
-                data: vec![val, val+1]}));
+            packets.push(Packet::Data(Data {
+                file_id,
+                packet_number,
+                is_last_packet: packet_number == 2,
+                data: vec![val, val + 1],
+            }));
         }
         let mut rng = thread_rng();
 
@@ -204,7 +222,7 @@ mod all_packets_tests {
             assert_eq!(2, data.len());
             let val: u8 = (packet_number % 100).try_into().unwrap();
             assert_eq!(val, data[0]);
-            assert_eq!(val+1, data[1]);
+            assert_eq!(val + 1, data[1]);
         }
     }
 }
