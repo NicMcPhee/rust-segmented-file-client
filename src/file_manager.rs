@@ -41,6 +41,8 @@ impl FileManager {
 
 #[cfg(test)]
 mod process_packet_tests {
+    use std::ffi::OsString;
+
     use crate::{
         file_manager::FileManager,
         packets::{Data, Header, Packet},
@@ -48,7 +50,7 @@ mod process_packet_tests {
 
     #[test]
     fn just_header_packet() {
-        let test_file_name = "test_file.txt".to_string();
+        let test_file_name: OsString = "test_file.txt".to_string().into();
         let header = Header {
             file_id: 37,
             file_name: test_file_name.clone(),
@@ -179,6 +181,8 @@ mod quickcheck_tests {
 
 #[cfg(test)]
 mod all_packets_tests {
+    use std::ffi::OsString;
+
     use rand::seq::SliceRandom;
     use rand::thread_rng;
 
@@ -189,7 +193,7 @@ mod all_packets_tests {
     #[test]
     fn processes_full_packet_set() {
         let mut packets = Vec::new();
-        let file_name = "test_file_name".to_string();
+        let file_name = OsString::from("test_file_name".to_string());
         let file_id = 42;
         let num_packets: u16 = 3;
         packets.push(Packet::Header(Header {

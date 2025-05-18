@@ -1,4 +1,5 @@
 use std::{
+    ffi::OsString,
     ops::Not,
     str::{self, Utf8Error},
 };
@@ -49,7 +50,7 @@ impl TryFrom<&[u8]> for Packet {
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Header {
     pub(crate) file_id: u8,
-    pub(crate) file_name: String,
+    pub(crate) file_name: OsString,
 }
 
 impl From<Utf8Error> for PacketParseError {
@@ -80,7 +81,8 @@ impl TryFrom<&[u8]> for Header {
             "expected a header packet but first byte was not even"
         );
         let file_id = bytes[1];
-        let file_name = str::from_utf8(&bytes[2..])?.to_string();
+        // The `.into()` converts a Rust string into an `OsString`.
+        let file_name = str::from_utf8(&bytes[2..])?.to_string().into();
 
         Ok(Self { file_id, file_name })
     }
@@ -194,15 +196,25 @@ mod parse_header_tests {
 
     #[test]
     fn emoji_in_file_name() {
-        // The last four bytes in the following are legal bytes
-        // for a sparkle heart emoji
-        let sparkle_heart = vec![0, 0, 240, 159, 146, 150];
-        let result = Header::try_from(sparkle_heart.as_slice());
+        // `\xPQ` is a byte whose value is 16*P+Q where P and Q are both hexadecimal
+        // digits. So `\x00` is the byte having value 0, and `\x0C` is the byte having
+        // value 12 (in decimal). In this example, we're setting the status byte to
+        // 0, the file ID byte to 12, and the file name to the string containing all
+        // the remaining characters, i.e., "This file is lovely 💖". Note that because
+        // Rust strings support full Unicode, we can include things like emojis in
+        // our packets. The `.as_bytes()` converts the string to a reference to an
+        // array of bytes, correctly handling multi-byte characters like the emoji
+        // (which converts to four bytes: [240, 159, 146, 150]).
+        // Be aware, however, that not all operating systems support emojis
+        // in places like file names, so you might want to be careful about creating
+        // files with "interesting" names like this.
+        let sparkle_heart = "\x00\x0CThis file is lovely 💖".as_bytes();
+        let result = Header::try_from(sparkle_heart);
         assert_eq!(
             result,
             Ok(Header {
-                file_id: 0,
-                file_name: "💖".to_string()
+                file_id: 12,
+                file_name: "This file is lovely 💖".to_string().into()
             })
         );
     }
@@ -280,7 +292,7 @@ impl Arbitrary for Header {
     fn arbitrary(g: &mut Gen) -> Self {
         Self {
             file_id: u8::arbitrary(g),
-            file_name: String::arbitrary(g),
+            file_name: String::arbitrary(g).into(),
         }
     }
 }

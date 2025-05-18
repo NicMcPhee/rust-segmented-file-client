@@ -1,10 +1,11 @@
 use std::{collections::HashMap, fs::File, io::{self, Write}};
+    ffi::OsString,
 
 use crate::packets::{Packet, Data, Header};
 
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct PacketGroup {
-    pub(crate) file_name: Option<String>,
+    pub(crate) file_name: Option<OsString>,
     pub(crate) expected_number_of_packets: Option<usize>,
     pub(crate) packets: HashMap<u16, Vec<u8>>
 }
