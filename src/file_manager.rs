@@ -39,6 +39,7 @@ impl FileManager {
     }
 }
 
+#[expect(clippy::unwrap_used, reason = "Unwrap is OK in tests")]
 #[cfg(test)]
 mod process_packet_tests {
     use std::ffi::OsString;
@@ -61,7 +62,7 @@ mod process_packet_tests {
 
         let map = file_manager.map;
         assert_eq!(map.len(), 1);
-        let file_number = map.keys().nth(0).unwrap();
+        let file_number = map.keys().next().unwrap();
         let packet_group = map.get(file_number).unwrap();
         assert_eq!(test_file_name, packet_group.file_name.clone().unwrap());
         assert_eq!(None, packet_group.expected_number_of_packets);
@@ -86,7 +87,7 @@ mod process_packet_tests {
 
         let map = file_manager.map;
         assert_eq!(map.len(), 1);
-        let file_number = map.keys().nth(0).unwrap();
+        let file_number = map.keys().next().unwrap();
         let packet_group = map.get(file_number).unwrap();
         assert_eq!(None, packet_group.file_name);
         assert_eq!(None, packet_group.expected_number_of_packets);
@@ -112,7 +113,7 @@ mod process_packet_tests {
 
         let map = file_manager.map;
         assert_eq!(map.len(), 1);
-        let file_number = map.keys().nth(0).unwrap();
+        let file_number = map.keys().next().unwrap();
         let packet_group = map.get(file_number).unwrap();
         assert_eq!(None, packet_group.file_name);
         assert_eq!(
@@ -124,9 +125,9 @@ mod process_packet_tests {
     }
 }
 
+#[expect(clippy::unwrap_used, reason = "Unwrap is OK in tests")]
 #[cfg(test)]
 mod quickcheck_tests {
-    use std::ops::Deref;
 
     use crate::packets::{Data, Header};
 
@@ -175,10 +176,11 @@ mod quickcheck_tests {
             assert_eq!(None, group.expected_number_of_packets);
         }
         assert_eq!(1, group.packets.len());
-        group.packets.get(&packet.packet_number).unwrap().deref() == packet.data
+        *group.packets.get(&packet.packet_number).unwrap() == packet.data
     }
 }
 
+#[expect(clippy::unwrap_used, reason = "Unwrap is OK in tests")]
 #[cfg(test)]
 mod all_packets_tests {
     use std::ffi::OsString;
